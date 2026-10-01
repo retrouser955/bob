@@ -1,9 +1,8 @@
-import dotenv from "dotenv";
 import { REST, Routes, Client, GatewayIntentBits } from "discord.js";
 import { Player } from "discord-player";
 import { SlashHandler } from "../controller/slash.js";
 
-dotenv.config();
+process.loadEnvFile()
 
 const tokens = process.env.BOT_TOKENS?.split(',') || [];
 const clientIds = process.env.CLIENT_IDS?.split(',') || [];

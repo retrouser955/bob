@@ -11,10 +11,9 @@ export class ClientActivityHandler {
         "up and running ( ˶ˆᗜˆ˵ )",
         "happy with spotify access ♡⸜(˶˃ ᵕ ˂˶)⸝♡",
         "waiting for non-existent update patch",
-        "fantasizing about the money earn from being a music bot (,,>ヮ<,,)!",
         "🎶🎶🎶",
-        "better than matchbox",
-        "better than jockie music"
+        "now with Server ABR '-'",
+        "no pesky FFmpeg child process needed!"
     ];
     private intervalTime: number = 5000; 
 

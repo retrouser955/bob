@@ -1,7 +1,6 @@
 import dotenv from "dotenv";
 import { GatewayIntentBits } from "discord.js";
 import { PlayerClient } from "./playerClient.js";
-
 dotenv.config();
 
 const BOT_TOKENS = process.env.BOT_TOKENS?.split(',').map(t => t.trim()).filter(Boolean) || [];

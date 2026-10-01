@@ -1,6 +1,6 @@
 {
     "discordPlayer": {
-        "skipFFmpeg": false,
+        "skipFFmpeg": true,
         "ffmpegPath": null,
         "playerOptions": {
             "disableVolume": false,
@@ -37,11 +37,7 @@
             "Youtubei": {
                 "enabled": true,
                 "priority": 5,
-                "config": {
-                    "client": "WEB",
-                    "highWaterMark": 3145728,
-                    "useCookie": false
-                }
+                "config": {}
             },
             "YoutubeSabr": {
                 "enabled": false,
