@@ -16,6 +16,7 @@ export class PlayerEventHandler {
 
     private onError(queue: GuildQueue, error: Error) {
         console.error(`[Error] Queue: ${queue.guild.name} | ${error.message}`);
+        console.log(error)
         if (queue.tracks.size > 0) queue.node.skip();
         else if (!queue.deleted) queue.delete();
     }

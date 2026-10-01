@@ -89,7 +89,10 @@ export class SearchCommand implements SlashCommand {
         let queue = player.nodes.get(interaction.guild as any);
         if (!queue) {
             queue = player.nodes.create(interaction.guild as any, {
-                metadata: interaction.channel,
+                metadata: {
+                    channel: interaction.channel,
+                    filters: []
+                },
                 ...BotConfig.discordPlayer.playerOptions,
             });
         }

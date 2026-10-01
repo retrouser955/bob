@@ -58,7 +58,10 @@ export class PlayCommand implements SlashCommand {
                 requestedBy: interaction.user as any,
                 searchEngine: searchEngine,
                 nodeOptions: {
-                    metadata: interaction.channel,
+                    metadata: {
+                        channel: interaction.channel,
+                        filters: []
+                    },
                     ...BotConfig.discordPlayer.playerOptions,
                 }
             });

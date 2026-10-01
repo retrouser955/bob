@@ -3,6 +3,8 @@ import { PlayCommand } from "../commands/music/play.js";
 import { SearchCommand } from "../commands/music/search.js";
 import type { SlashCommand } from "../interfaces/slashInterface.js";
 import { ChatInputCommandInteraction } from "discord.js";
+import { SurroundCommand } from "../commands/music/surround.js";
+import { Vaporwave } from "../commands/music/vaporwave.js";
 
 /**
  * Slash command handler
@@ -21,6 +23,8 @@ export class SlashHandler {
         const slashCommands: SlashCommand[] = [
             new PlayCommand(),
             new SearchCommand(),
+            new SurroundCommand(),
+            new Vaporwave()
         ];
 
         for (const command of slashCommands) {

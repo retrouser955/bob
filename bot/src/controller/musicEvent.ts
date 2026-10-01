@@ -28,7 +28,7 @@ export class MusicEventHandler {
     }
 
     private async onPlayerStart(queue: any, track: Track) {
-        const channel = queue.metadata;
+        const channel = queue.metadata.channel;
 
         if (!channel) {
             console.error("Channel not found!");
@@ -59,7 +59,7 @@ export class MusicEventHandler {
             });
 
         try {
-            await queue.metadata.send({ embeds: [embed], components: buttons() });
+            await queue.metadata.channel.send({ embeds: [embed], components: buttons() });
         } catch (error) {
             console.error("Error sending playerStart embed: ", error);
         }
