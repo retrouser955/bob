@@ -63,7 +63,7 @@ SPOTIFY_CLIENT_SECRET=spotify-client-secret
 [discord.js](https://github.com/discordjs/discord.js)
 [discord-player](https://github.com/Androz2091/discord-player)
 
-**Retro's Notes**
+**Retro's Notes**  
 I am using this bot as a testing bot on Windows. Therefore, ffmpeg-static is installed. If you are gonna run this on a Linux machine, please just uninstall it and install FFmpeg.
 
 Changes include:
