@@ -4,6 +4,7 @@ import { Player, QueryType } from "discord-player";
 import type { SearchQueryType } from "discord-player";
 import { buildEmbed } from "../build/embedBuilder.js";
 import BotConfig from "../../config/config.json" with { type: "json" };
+import { FilterManger } from "./FilterManager.js";
 
 /**
  * /play command functionality
@@ -22,14 +23,14 @@ export class PlayCommand implements SlashCommand {
      * @readonly
      */
     public readonly data = new SlashCommandBuilder()
-    .setName("play")
-    .setDescription("Plays a song/playlist or adds it to queue.")
-    .addStringOption(option => 
-        option.setName("query")
-        .setDescription("The song URL (Inputting name might not work, use /search instead.)")
-        .setRequired(true)
-    )
-    
+        .setName("play")
+        .setDescription("Plays a song/playlist or adds it to queue.")
+        .addStringOption(option =>
+            option.setName("query")
+                .setDescription("The song URL (Inputting name might not work, use /search instead.)")
+                .setRequired(true)
+        )
+
     /**
      * main logic
      * @param interaction Discord /play interaction
@@ -52,19 +53,25 @@ export class PlayCommand implements SlashCommand {
 
         let searchEngine: SearchQueryType = QueryType.AUTO;
         if (/radiko\.jp/.test(query)) searchEngine = `ext:radiko` as SearchQueryType;
-        
+
         try {
-            const { track, searchResult } = await player.play(channel as any, query, {
+            const { track, searchResult, queue } = await player.play(channel as any, query, {
                 requestedBy: interaction.user as any,
                 searchEngine: searchEngine,
                 nodeOptions: {
                     metadata: {
                         channel: interaction.channel,
-                        filters: []
                     },
                     ...BotConfig.discordPlayer.playerOptions,
                 }
             });
+
+            if (!(queue.metadata as any).filterManager) {
+                queue.setMetadata({
+                    ...(queue.metadata),
+                    filterManager: new FilterManger(queue as any)
+                } as any);
+            }
 
             const embed = buildEmbed(searchResult.playlist ?? track);
             await interaction.followUp({ embeds: [embed] });

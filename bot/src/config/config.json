@@ -3,8 +3,7 @@
         "skipFFmpeg": true,
         "ffmpegPath": null,
         "playerOptions": {
-            "disableVolume": false,
-            "volume": 50,
+            "disableVolume": true,
             "maxQueueSize": 200,
             "leaveOnEmptyTimedOut": 30000,
             "leaveOnEmpty": true,

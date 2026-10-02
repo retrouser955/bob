@@ -33,7 +33,7 @@ export class PlayerClient extends Client {
 
         this.player = new Player(this as any, {
             skipFFmpeg: AppConfig.discordPlayer.skipFFmpeg,
-            ffmpegPath: AppConfig.discordPlayer.ffmpegPath,
+            ffmpegPath: AppConfig.discordPlayer.ffmpegPath
         });
 
         this.player.on("debug", (message) => {

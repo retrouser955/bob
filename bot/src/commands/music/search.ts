@@ -7,6 +7,7 @@ import { ActionRow, ActionRowBuilder, ButtonBuilder, ChatInputCommandInteraction
 import type { APIButtonComponent, APIStringSelectComponent, Interaction, MessageActionRowComponent } from "discord.js";
 import { Player, SearchResult } from "discord-player";
 import { buildEmbed, buildSearchEmbed } from "../build/embedBuilder.js";
+import { FilterManger } from "./FilterManager.js";
 
 const extractorMap: Record<string, string> = {
     "Youtube": YoutubeExtractor.identifier,
@@ -90,11 +91,17 @@ export class SearchCommand implements SlashCommand {
         if (!queue) {
             queue = player.nodes.create(interaction.guild as any, {
                 metadata: {
-                    channel: interaction.channel,
-                    filters: []
+                    channel: interaction.channel
                 },
                 ...BotConfig.discordPlayer.playerOptions,
             });
+
+            if (!(queue.metadata as any).filterManager) {
+                queue.setMetadata({
+                    ...(queue.metadata),
+                    filterManager: new FilterManger(queue as any)
+                } as any);
+            }
         }
 
         try {
