@@ -3,7 +3,7 @@ import { ALL_FORMATS, AudioSample, AudioSampleSink, Input, ReadableStreamSource 
 import { registerMediabunnyServer, toAvFrame, AvFrameAudioSampleResource } from "@mediabunny/server";
 import { PassThrough, Readable } from "stream";
 import * as NodeAV from "node-av";
-import { FilterManger } from "../commands/music/FilterManager.js";
+import { FilterManager } from "../commands/music/FilterManager.js";
 
 // https://mediabunny.dev/guide/extensions/server#usage
 // GPU accelerated decoding only for video >:( Why!!!!
@@ -49,12 +49,19 @@ onStreamExtracted(async (stream, _, queue) => {
         }
     });
 
+    if(!queue.metadata.filterManager) {
+        queue.setMetadata({
+            ...(queue.metadata),
+            filterManager: new FilterManager(queue)
+        })
+    }
+
     const sink = new AudioSampleSink(audioTrack);
 
     const initialFilters = []
 
     try {
-        initialFilters.push((queue.metadata.filterManager as FilterManger)._buildFilterChain())
+        initialFilters.push((queue.metadata.filterManager as FilterManager)._buildFilterChain())
     } catch {
         // no-op
     } finally {

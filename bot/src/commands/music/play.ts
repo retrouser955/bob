@@ -4,7 +4,6 @@ import { Player, QueryType } from "discord-player";
 import type { SearchQueryType } from "discord-player";
 import { buildEmbed } from "../build/embedBuilder.js";
 import BotConfig from "../../config/config.json" with { type: "json" };
-import { FilterManger } from "./FilterManager.js";
 
 /**
  * /play command functionality
@@ -65,13 +64,6 @@ export class PlayCommand implements SlashCommand {
                     ...BotConfig.discordPlayer.playerOptions,
                 }
             });
-
-            if (!(queue.metadata as any).filterManager) {
-                queue.setMetadata({
-                    ...(queue.metadata),
-                    filterManager: new FilterManger(queue as any)
-                } as any);
-            }
 
             const embed = buildEmbed(searchResult.playlist ?? track);
             await interaction.followUp({ embeds: [embed] });

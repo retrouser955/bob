@@ -46,7 +46,7 @@ export const FFMPEG_AUDIO_FILTERS = {
     ]
 } as const;
 
-export class FilterManger {
+export class FilterManager {
     private _volume = 0.5;
 
     constructor(private queue: GuildQueue<{ changeFilter?: (filter?: string) => void }>) { };

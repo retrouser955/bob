@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder } from "discord.js";
 import { SlashCommand } from "../../interfaces/slashInterface.js";
-import { FFMPEG_AUDIO_FILTERS, FilterManger } from "./FilterManager.js";
+import { FFMPEG_AUDIO_FILTERS, FilterManager } from "./FilterManager.js";
 import { Player } from "discord-player";
 
 export class Filter implements SlashCommand {
@@ -25,7 +25,7 @@ export class Filter implements SlashCommand {
     async execute(interaction: ChatInputCommandInteraction, player: Player): Promise<void> {
         const queue = player.nodes.get<{
             changeFilter?: (filterString?: string) => void;
-            filterManager: FilterManger
+            filterManager: FilterManager
         }>(interaction.guild.id);
 
         if (!queue) {

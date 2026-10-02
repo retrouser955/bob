@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder } from "discord.js";
 import { SlashCommand } from "../../interfaces/slashInterface.js";
-import { FilterManger } from "./FilterManager.js";
+import { FilterManager } from "./FilterManager.js";
 import { Player } from "discord-player";
 
 export class VolumeCommand implements SlashCommand {
@@ -21,7 +21,7 @@ export class VolumeCommand implements SlashCommand {
     async execute(interaction: ChatInputCommandInteraction, player: Player): Promise<void> {
         const queue = player.nodes.get<{
             changeFilter?: (filterString?: string) => void;
-            filterManager: FilterManger
+            filterManager: FilterManager
         }>(interaction.guild.id);
 
         if (!queue) {
