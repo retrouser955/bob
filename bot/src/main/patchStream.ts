@@ -1,4 +1,4 @@
-import { onStreamExtracted, StreamType, useMainPlayer } from "discord-player";
+import { GuildQueue, onStreamExtracted, StreamType, useMainPlayer } from "discord-player";
 import { ALL_FORMATS, AudioSample, AudioSampleSink, Input, ReadableStreamSource } from "mediabunny";
 import { registerMediabunnyServer, toAvFrame, AvFrameAudioSampleResource } from "@mediabunny/server";
 import { PassThrough, Readable } from "stream";
@@ -6,15 +6,21 @@ import * as NodeAV from "node-av";
 import { FilterManager } from "../commands/music/FilterManager.js";
 
 // https://mediabunny.dev/guide/extensions/server#usage
-// GPU accelerated decoding only for video >:( Why!!!!
 registerMediabunnyServer();
 
 const OUTPUT_FORMAT = "aformat=sample_fmts=s16:sample_rates=48000:channel_layouts=stereo";
 
+const guildQueueIndexTracker = new WeakMap<GuildQueue, number>();
+
 onStreamExtracted(async (stream, _, queue) => {
     if (queue.filters.ffmpeg.filters.length > 0) return stream;
+
+    const currentIndex = (guildQueueIndexTracker.get(queue) ?? 0) + 1
+    guildQueueIndexTracker.set(queue, currentIndex);
+
     let webStream: ReadableStream<Uint8Array>;
     let abortController: AbortController;
+    let sourceReadable: Readable | null = null;
 
     if (typeof stream === "string") {
         abortController = new AbortController();
@@ -31,9 +37,9 @@ onStreamExtracted(async (stream, _, queue) => {
 
         webStream = response.body;
     } else {
-        const inputStream = stream instanceof Readable ? stream : stream.stream;
+        sourceReadable = stream instanceof Readable ? stream : stream.stream;
 
-        webStream = Readable.toWeb(inputStream);
+        webStream = Readable.toWeb(sourceReadable);
     }
 
     const input = new Input({
@@ -49,7 +55,7 @@ onStreamExtracted(async (stream, _, queue) => {
         }
     });
 
-    if(!queue.metadata.filterManager) {
+    if (!queue.metadata.filterManager) {
         queue.setMetadata({
             ...(queue.metadata),
             filterManager: new FilterManager(queue)
@@ -58,10 +64,10 @@ onStreamExtracted(async (stream, _, queue) => {
 
     const sink = new AudioSampleSink(audioTrack);
 
-    const initialFilters = []
+    const initialFilters = [];
 
     try {
-        initialFilters.push((queue.metadata.filterManager as FilterManager)._buildFilterChain())
+        initialFilters.push((queue.metadata.filterManager as FilterManager)._buildFilterChain());
     } catch {
         // no-op
     } finally {
@@ -93,34 +99,72 @@ onStreamExtracted(async (stream, _, queue) => {
         changeFilter
     });
 
+    let isNaturalEnd = true;
+
+    function waitForDrainOrClose(): Promise<void> {
+        if (passThrough.destroyed || passThrough.writableEnded) return Promise.resolve();
+
+        const isStale = () =>
+            passThrough.destroyed ||
+            passThrough.writableEnded ||
+            guildQueueIndexTracker.get(queue) !== currentIndex;
+
+        return new Promise((resolve) => {
+            const finish = () => {
+                clearInterval(poll);
+                passThrough.off("drain", finish);
+                passThrough.off("close", finish);
+                passThrough.off("error", finish);
+                resolve();
+            };
+
+            const poll = setInterval(() => {
+                if(isStale()) {
+                    isNaturalEnd = false;
+                    finish();
+                }
+            }, 250)
+
+            passThrough.once("drain", finish);
+            passThrough.once("close", finish);
+            passThrough.once("error", finish);
+
+            if (passThrough.destroyed || passThrough.writableEnded) finish();
+        });
+    }
+
     (async () => {
         let bufferCache: Buffer[] = []
         try {
-            for await (const sample of sink.samples()) {
+            for await (using sample of sink.samples()) {
                 if (passThrough.destroyed) {
                     sample.close();
                     break;
                 }
 
-                const frame = new NodeAV.Frame();
+                using frame = new NodeAV.Frame();
                 frame.alloc();
 
                 try {
                     await toAvFrame(sample, frame);
 
-                    for await (const processedFrame of filterApi.frames(frame)) {
-                        const mSample = new AudioSample(new AvFrameAudioSampleResource(processedFrame));
-                        const pcmBuffer = new Int16Array(mSample.numberOfFrames * mSample.numberOfChannels);
+                    for await (using processedFrame of filterApi.frames(frame)) {
+                        if (passThrough.destroyed) {
+                            processedFrame.unref();
+                            break;
+                        };
+                        using mSample = new AudioSample(new AvFrameAudioSampleResource(processedFrame));
+                        let finalBuffer: Buffer;
                         try {
+                            const pcmBuffer = new Int16Array(mSample.numberOfFrames * mSample.numberOfChannels);
                             mSample.copyTo(pcmBuffer, {
                                 planeIndex: 0,
                                 format: "s16"
                             });
+                            finalBuffer = Buffer.from(pcmBuffer.buffer, pcmBuffer.byteOffset, pcmBuffer.byteLength);
                         } finally {
                             mSample.close();
                         }
-
-                        const finalBuffer = Buffer.from(pcmBuffer.buffer, pcmBuffer.byteOffset, pcmBuffer.byteLength);
 
                         bufferCache.push(finalBuffer);
 
@@ -133,7 +177,8 @@ onStreamExtracted(async (stream, _, queue) => {
                             );
 
                             if (!isWriteable) {
-                                await new Promise((res) => passThrough.once("drain", res));
+                                await waitForDrainOrClose();
+                                if (passThrough.destroyed) break;
                             }
                         }
                     }
@@ -154,12 +199,23 @@ onStreamExtracted(async (stream, _, queue) => {
         } catch (error) {
             passThrough.destroy(error);
         } finally {
-            if(bufferCache.length > 0) {
+            if (bufferCache.length > 0) {
                 const concatBuffer = Buffer.concat(bufferCache);
                 bufferCache = [];
                 passThrough.write(concatBuffer);
             }
-            passThrough.end();
+            abortController?.abort();
+            if(sourceReadable && !sourceReadable.destroyed) {
+                sourceReadable.destroy();
+            }
+            if (isNaturalEnd) {
+                passThrough.end();
+            } else if (!passThrough.destroyed) {
+                passThrough.destroy();
+            }
+            if (!input.disposed) {
+                input.dispose();
+            }
             filterApi?.close();
         }
     })();

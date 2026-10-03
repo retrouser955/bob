@@ -50,8 +50,7 @@ export class FilterManager {
     private _volume = 0.5;
 
     constructor(private queue: GuildQueue<{ changeFilter?: (filter?: string) => void }>) { };
-
-    // Formatted in <FilterName::ffmpegProperty, value>
+    
     enabledFilters = new Map<keyof typeof FFMPEG_AUDIO_FILTERS, string>();
 
     _buildFilterChain() {

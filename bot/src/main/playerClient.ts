@@ -36,9 +36,9 @@ export class PlayerClient extends Client {
             ffmpegPath: AppConfig.discordPlayer.ffmpegPath
         });
 
-        this.player.on("debug", (message) => {
-            console.log(message)
-        })
+        // this.player.on("debug", (message) => {
+        //     console.log(message)
+        // })
 
         this.setupPlayerHooks();
 
